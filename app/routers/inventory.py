@@ -4,6 +4,7 @@ from app.schemas.inventory import (
     InventoryBase,
     InventoryUpdateResponse,
     InventoryDeleteResponse,
+    InventoryErrorResponse,
 )
 
 router = APIRouter(
@@ -26,7 +27,10 @@ def get_inventory():
     summary="Get inventory item by ID",
     description="Return an inventory item by ID. Database lookup is not implemented yet.",
     responses={
-        404: {"description": "Inventory item not found"}
+        404: {
+            "model": InventoryErrorResponse,
+            "description": "Inventory item not found"
+        }
     }
 )
 def get_inventory_item(item_id: int):

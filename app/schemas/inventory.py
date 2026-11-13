@@ -10,3 +10,6 @@ class InventoryUpdateResponse(BaseModel):
 
 class InventoryDeleteResponse(BaseModel):
     id: int
+
+class InventoryErrorResponse(BaseModel):
+    detail: str

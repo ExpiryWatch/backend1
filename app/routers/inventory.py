@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.schemas.inventory import InventoryBase
 
@@ -10,6 +10,12 @@ router = APIRouter(
 @router.get("/")
 def get_inventory():
     return []
+
+@router.get('/{item_id}')
+def get_inventory_item(item_id: int):
+    item = None
+
+    return require_inventory_item(item, item_id)
 
 @router.post("/")
 def create_inventory_item(item: InventoryBase):
@@ -25,3 +31,11 @@ def update_inventory_item(item_id: int, item: InventoryBase):
 @router.delete("/{item_id}")
 def delete_inventory_item(item_id: int):
     return {"id": item_id}
+
+def require_inventory_item(item, item_id: int):
+    if item is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f'Позиция с ID {item_id} не найдена'
+        )
+    return item

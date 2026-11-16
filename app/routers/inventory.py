@@ -2,10 +2,18 @@ from fastapi import APIRouter, HTTPException
 
 from app.schemas.inventory import (
     InventoryBase,
+    InventoryCreate,
+    InventoryRead,
     InventoryUpdateResponse,
     InventoryDeleteResponse,
     InventoryErrorResponse,
 )
+
+from fastapi import Depends
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.models import StockItem
 
 router = APIRouter(
     prefix="/inventory",
@@ -14,18 +22,19 @@ router = APIRouter(
 
 @router.get(
     "/",
-    response_model=list[InventoryBase],
+    response_model=list[InventoryRead],
     summary="Get all inventory items",
-    description="Return a list of inventory items. Database retrieval is not implemented yet."
+    description="Return all inventory items from the database."
 )
-def get_inventory():
-    return []
+def get_inventory(db: Session = Depends(get_db)):
+    items = db.query(StockItem).all()
+    return items
 
 @router.get(
     "/{item_id}",
-    response_model=InventoryBase,
+    response_model=InventoryRead,
     summary="Get inventory item by ID",
-    description="Return an inventory item by ID. Database lookup is not implemented yet.",
+    description="Return an inventory item from the database by ID.",
     responses={
         404: {
             "model": InventoryErrorResponse,
@@ -33,19 +42,28 @@ def get_inventory():
         }
     }
 )
-def get_inventory_item(item_id: int):
-    item = None
-
+def get_inventory_item(item_id: int, db: Session = Depends(get_db)):
+    item = db.get(StockItem, item_id)
     return require_inventory_item(item, item_id)
 
 @router.post(
     "/",
-    response_model=InventoryBase,
+    response_model=InventoryRead,
+    status_code=201,
     summary="Create inventory item",
-    description="Accept inventory item data. Database saving is not implemented yet."
+    description="Create a new inventory item in the database."
 )
-def create_inventory_item(item: InventoryBase):
-    return item
+def create_inventory_item(
+    item: InventoryCreate,
+    db: Session = Depends(get_db)
+):
+    new_item = StockItem(**item.model_dump())
+
+    db.add(new_item)
+    db.commit()
+    db.refresh(new_item)
+
+    return new_item
 
 @router.put(
     "/{item_id}",

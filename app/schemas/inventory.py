@@ -1,4 +1,8 @@
-from pydantic import BaseModel
+from datetime import date, datetime
+
+from pydantic import BaseModel, ConfigDict
+
+from app.models import ExpiryStatus
 
 class InventoryBase(BaseModel):
     name: str
@@ -13,3 +17,37 @@ class InventoryDeleteResponse(BaseModel):
 
 class InventoryErrorResponse(BaseModel):
     detail: str
+
+class InventoryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    quantity: float
+    unit: str
+
+    category_id: int | None
+    storage_location_id: int | None
+
+    purchase_date: date | None
+    expiry_date: date | None
+    comment: str | None
+
+    status: ExpiryStatus
+    status_label: str
+    days_left: int | None
+
+    created_at: datetime
+    updated_at: datetime
+
+class InventoryCreate(BaseModel):
+    name: str
+    quantity: float
+    unit: str = "шт"
+
+    category_id: int | None = None
+    storage_location_id: int | None = None
+
+    purchase_date: date | None = None
+    expiry_date: date | None = None
+    comment: str | None = None

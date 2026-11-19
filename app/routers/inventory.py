@@ -67,23 +67,58 @@ def create_inventory_item(
 
 @router.put(
     "/{item_id}",
-    response_model=InventoryUpdateResponse,
+    response_model=InventoryRead,
     summary="Update inventory item",
-    description="Accept updated inventory item data by ID. Database updating is not implemented yet."
-)
-def update_inventory_item(item_id: int, item: InventoryBase):
-    return {
-        "id": item_id,
-        "item": item
+    description="Update an existing inventory item in the database.",
+    responses={
+        404: {
+            "model": InventoryErrorResponse,
+            "description": "Inventory item not found"
+        }
     }
+)
+def update_inventory_item(
+    item_id: int,
+    item: InventoryCreate,
+    db: Session = Depends(get_db)
+):
+    existing_item = db.get(StockItem, item_id)
+
+    require_inventory_item(existing_item, item_id)
+
+    data = item.model_dump()
+
+    for field, value in data.items():
+        setattr(existing_item, field, value)
+
+    db.commit()
+    db.refresh(existing_item)
+
+    return existing_item
 
 @router.delete(
     "/{item_id}",
     response_model=InventoryDeleteResponse,
     summary="Delete inventory item",
-    description="Accept inventory item ID for deletion. Database deletion is not implemented yet."
+    description="Delete an inventory item from the database.",
+    responses={
+        404: {
+            "model": InventoryErrorResponse,
+            "description": "Inventory item not found"
+        }
+    }
 )
-def delete_inventory_item(item_id: int):
+def delete_inventory_item(
+    item_id: int,
+    db: Session = Depends(get_db)
+):
+    item = db.get(StockItem, item_id)
+
+    require_inventory_item(item, item_id)
+
+    db.delete(item)
+    db.commit()
+
     return {"id": item_id}
 
 def require_inventory_item(item, item_id: int):

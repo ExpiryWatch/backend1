@@ -75,10 +75,6 @@ class StockItem(Base):
     __table_args__ = (
         CheckConstraint("quantity > 0", name="ck_items_quantity_positive"),
         CheckConstraint("length(trim(name)) > 0", name="ck_items_name_not_blank"),
-        CheckConstraint(
-            "expiry_date IS NULL OR purchase_date IS NULL OR expiry_date >= purchase_date",
-            name="ck_items_expiry_not_before_purchase",
-        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)

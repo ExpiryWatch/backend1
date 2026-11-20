@@ -60,3 +60,49 @@ class InventoryCreate(BaseModel):
             raise ValueError("Название продукта не может быть пустым")
 
         return value
+
+class InventoryPatch(BaseModel):
+    name: str | None = Field(default=None, min_length=1)
+    quantity: float | None = Field(default=None, gt=0)
+    unit: str | None = None
+
+    category_id: int | None = None
+    storage_location_id: int | None = None
+
+    purchase_date: date | None = None
+    expiry_date: date | None = None
+    comment: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str | None) -> str | None:
+        if value is not None:
+            value = value.strip()
+
+            if not value:
+                raise ValueError("Название продукта не может быть пустым")
+
+        return value
+
+
+class InventoryPut(BaseModel):
+    name: str = Field(min_length=1)
+    quantity: float = Field(gt=0)
+    unit: str = Field(min_length=1)
+
+    category_id: int | None
+    storage_location_id: int | None
+
+    purchase_date: date | None
+    expiry_date: date | None
+    comment: str | None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Название продукта не может быть пустым")
+
+        return value

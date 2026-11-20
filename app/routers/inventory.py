@@ -3,6 +3,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from app.schemas.inventory import (
     InventoryBase,
     InventoryCreate,
+    InventoryPatch,
+    InventoryPut,
     InventoryRead,
     InventoryUpdateResponse,
     InventoryDeleteResponse,
@@ -141,7 +143,7 @@ def create_inventory_item(
 )
 def update_inventory_item(
     item_id: int,
-    item: InventoryCreate,
+    item: InventoryPut,
     db: Session = Depends(get_db)
 ):
     existing_item = db.get(StockItem, item_id)
@@ -167,6 +169,67 @@ def update_inventory_item(
             )
 
     data = item.model_dump()
+
+    for field, value in data.items():
+        setattr(existing_item, field, value)
+
+    db.commit()
+    db.refresh(existing_item)
+
+    return existing_item
+
+
+@router.patch(
+    "/{item_id}",
+    response_model=InventoryRead,
+    summary="Partially update inventory item",
+    description="Update only the provided fields of an inventory item.",
+    responses={
+        404: {
+            "model": InventoryErrorResponse,
+            "description": "Inventory item not found"
+        },
+        422: {
+            "model": InventoryErrorResponse,
+            "description": "Invalid input data"
+        }
+    }
+)
+def patch_inventory_item(
+    item_id: int,
+    item: InventoryPatch,
+    db: Session = Depends(get_db)
+):
+    existing_item = db.get(StockItem, item_id)
+
+    require_inventory_item(existing_item, item_id)
+
+    data = item.model_dump(exclude_unset=True)
+
+    for field in ("name", "quantity", "unit"):
+        if field in data and data[field] is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Поле {field} не может быть null"
+            )
+
+    if data.get("category_id") is not None:
+        category = db.get(Category, data["category_id"])
+
+        if category is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Категория с ID {data['category_id']} не найдена"
+            )
+
+    if data.get("storage_location_id") is not None:
+        location = db.get(StorageLocation, data["storage_location_id"])
+
+        if location is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Место хранения с ID {data['storage_location_id']} не найдено"
+            )
 
     for field, value in data.items():
         setattr(existing_item, field, value)

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Query
 
 from app.schemas.inventory import (
     InventoryBase,
@@ -9,11 +9,16 @@ from app.schemas.inventory import (
     InventoryErrorResponse,
 )
 
-from fastapi import Depends
+
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import StockItem
+
+from typing import Literal
+
+from app.queries import list_items
+from app.models import ExpiryStatus
 
 router = APIRouter(
     prefix="/inventory",
@@ -24,10 +29,31 @@ router = APIRouter(
     "/",
     response_model=list[InventoryRead],
     summary="Get all inventory items",
-    description="Return all inventory items from the database."
+    description="Return inventory items with search, filters and sorting."
 )
-def get_inventory(db: Session = Depends(get_db)):
-    items = db.query(StockItem).all()
+def get_inventory(
+    db: Session = Depends(get_db),
+    q: str | None = None,
+    category_id: int | None = None,
+    storage_location_id: int | None = None,
+    status: ExpiryStatus | None = None,
+    sort: Literal["name", "expiry"] = "name",
+    order: Literal["asc", "desc"] = "asc",
+    limit: int | None = Query(default=None, ge=1),
+    offset: int = Query(default=0, ge=0)
+):
+    items = list_items(
+        db,
+        q=q,
+        category_id=category_id,
+        storage_location_id=storage_location_id,
+        status=status,
+        sort=sort,
+        order=order,
+        limit=limit,
+        offset=offset
+    )
+
     return items
 
 @router.get(

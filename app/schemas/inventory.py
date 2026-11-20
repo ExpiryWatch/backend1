@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models import ExpiryStatus
 
@@ -41,8 +41,8 @@ class InventoryRead(BaseModel):
     updated_at: datetime
 
 class InventoryCreate(BaseModel):
-    name: str
-    quantity: float
+    name: str = Field(min_length=1)
+    quantity: float = Field(gt=0)
     unit: str = "шт"
 
     category_id: int | None = None
@@ -51,3 +51,12 @@ class InventoryCreate(BaseModel):
     purchase_date: date | None = None
     expiry_date: date | None = None
     comment: str | None = None
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Название продукта не может быть пустым")
+
+        return value

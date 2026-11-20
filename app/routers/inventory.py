@@ -13,7 +13,7 @@ from app.schemas.inventory import (
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import StockItem
+from app.models import StockItem, Category, StorageLocation
 
 from typing import Literal
 
@@ -29,7 +29,13 @@ router = APIRouter(
     "/",
     response_model=list[InventoryRead],
     summary="Get all inventory items",
-    description="Return inventory items with search, filters and sorting."
+    description="Return inventory items with search, filters and sorting.",
+    responses={
+        422: {
+            "model": InventoryErrorResponse,
+            "description": "Invalid search, filter or pagination parameters"
+        }
+    }
 )
 def get_inventory(
     db: Session = Depends(get_db),
@@ -65,6 +71,10 @@ def get_inventory(
         404: {
             "model": InventoryErrorResponse,
             "description": "Inventory item not found"
+        },
+        422: {
+            "model": InventoryErrorResponse,
+            "description": "Invalid inventory item ID"
         }
     }
 )
@@ -77,12 +87,34 @@ def get_inventory_item(item_id: int, db: Session = Depends(get_db)):
     response_model=InventoryRead,
     status_code=201,
     summary="Create inventory item",
-    description="Create a new inventory item in the database."
+    description="Create a new inventory item in the database.",
+    responses={
+        422: {
+            "model": InventoryErrorResponse,
+            "description": "Invalid input data, category or storage location"
+        }
+    }
 )
 def create_inventory_item(
     item: InventoryCreate,
     db: Session = Depends(get_db)
 ):
+    if item.category_id is not None:
+        category = db.get(Category, item.category_id)
+
+        if category is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Категория с ID {item.category_id} не найдена"
+            )
+    if item.storage_location_id is not None:
+        location = db.get(StorageLocation, item.storage_location_id)
+
+        if location is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Место хранения с ID {item.storage_location_id} не найдено"
+            )
     new_item = StockItem(**item.model_dump())
 
     db.add(new_item)
@@ -100,6 +132,10 @@ def create_inventory_item(
         404: {
             "model": InventoryErrorResponse,
             "description": "Inventory item not found"
+        },
+        422: {
+            "model": InventoryErrorResponse,
+            "description": "Invalid input data, category or storage location"
         }
     }
 )
@@ -111,6 +147,24 @@ def update_inventory_item(
     existing_item = db.get(StockItem, item_id)
 
     require_inventory_item(existing_item, item_id)
+
+    if item.category_id is not None:
+        category = db.get(Category, item.category_id)
+
+        if category is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Категория с ID {item.category_id} не найдена"
+            )
+
+    if item.storage_location_id is not None:
+        location = db.get(StorageLocation, item.storage_location_id)
+
+        if location is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Место хранения с ID {item.storage_location_id} не найдено"
+            )
 
     data = item.model_dump()
 
@@ -131,6 +185,10 @@ def update_inventory_item(
         404: {
             "model": InventoryErrorResponse,
             "description": "Inventory item not found"
+        },
+        422: {
+            "model": InventoryErrorResponse,
+            "description": "Invalid inventory item ID"
         }
     }
 )

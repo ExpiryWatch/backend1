@@ -43,7 +43,7 @@ class InventoryRead(BaseModel):
 class InventoryCreate(BaseModel):
     name: str = Field(min_length=1)
     quantity: float = Field(gt=0)
-    unit: str = "шт"
+    unit: str = Field(default="шт", min_length=1)
 
     category_id: int | None = None
     storage_location_id: int | None = None
@@ -60,11 +60,20 @@ class InventoryCreate(BaseModel):
             raise ValueError("Название продукта не может быть пустым")
 
         return value
+    @field_validator("unit")
+    @classmethod
+    def validate_unit(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Единица измерения не может быть пустой")
+
+        return value
 
 class InventoryPatch(BaseModel):
     name: str | None = Field(default=None, min_length=1)
     quantity: float | None = Field(default=None, gt=0)
-    unit: str | None = None
+    unit: str | None = Field(default=None, min_length=1)
 
     category_id: int | None = None
     storage_location_id: int | None = None
@@ -83,7 +92,16 @@ class InventoryPatch(BaseModel):
                 raise ValueError("Название продукта не может быть пустым")
 
         return value
+    @field_validator("unit")
+    @classmethod
+    def validate_unit(cls, value: str | None) -> str | None:
+        if value is not None:
+            value = value.strip()
 
+            if not value:
+                raise ValueError("Единица измерения не может быть пустой")
+
+        return value
 
 class InventoryPut(BaseModel):
     name: str = Field(min_length=1)
@@ -104,5 +122,14 @@ class InventoryPut(BaseModel):
 
         if not value:
             raise ValueError("Название продукта не может быть пустым")
+
+        return value
+    @field_validator("unit")
+    @classmethod
+    def validate_unit(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Единица измерения не может быть пустой")
 
         return value

@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models import ExpiryStatus
 
@@ -27,8 +27,14 @@ class InventoryDeleteResponse(BaseModel):
     id: int
 
 
+class InventoryValidationIssue(BaseModel):
+    loc: list[str | int]
+    msg: str
+
+
 class InventoryErrorResponse(BaseModel):
     detail: str
+    errors: list[InventoryValidationIssue] | None = None
 
 
 class InventoryRead(BaseModel):
@@ -78,14 +84,6 @@ class InventoryCreate(BaseModel):
         if isinstance(value, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
             return value
         raise ValueError("Укажите дату в формате ГГГГ-ММ-ДД")
-
-    @field_validator("expiry_date")
-    @classmethod
-    def date_order(cls, value, info: ValidationInfo):
-        purchase = info.data.get("purchase_date")
-        if purchase is not None and value is not None and value < purchase:
-            raise ValueError("Срок годности не может быть раньше даты приобретения")
-        return value
 
 
 class InventoryPatch(InventoryCreate):

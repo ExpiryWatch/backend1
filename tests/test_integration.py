@@ -115,7 +115,6 @@ class ApiTests(unittest.TestCase):
                    {"quantity": None}, {"unit": None},
                    {"unit": " "}, {"name": None}, {"category_id": 9999},
                    {"storage_location_id": 9999}, {"category_id": True},
-                   {"purchase_date": "2027-01-01"}, {"expiry_date": "2026-11-30"},
                    {"expiry_date": "2026-02-30"}, {"purchase_date": 0},
                    {"expiry_date": "2026-12-31T00:00:00"}, {"status": "fresh"},
                    {"storage_id": 21}, {"expiration_date": "2026-12-31"}]
@@ -129,6 +128,49 @@ class ApiTests(unittest.TestCase):
                 self.assertEqual(self.client.get(f"/inventory/{other['id']}").json(), other)
         self.assert_invalid(self.client.put(url, json={"name": "Кефир", "quantity": 1}))
         self.assertEqual(len(self.client.get("/inventory/").json()), 2)
+
+    def test_dates_are_independent_on_create_put_and_patch(self):
+        item = self.create(purchase_date="2027-01-01", expiry_date="2026-12-30")
+        url = f"/inventory/{item['id']}"
+        self.assertEqual((item["status"], item["days_left"]), ("expired", -1))
+        body = {key: item[key] for key in InventoryCreate.model_fields}
+        for method, changes in [(self.client.put, body | {"expiry_date": "2026-12-29"}),
+                                (self.client.patch, {"purchase_date": "2027-02-01"}),
+                                (self.client.patch, {"expiry_date": "2026-12-28"}),
+                                (self.client.patch, {"quantity": 0.5})]:
+            with self.subTest(changes=changes):
+                response = method(url, json=changes)
+                self.assertEqual(response.status_code, 200, response.text)
+                self.assertGreater(response.json()["purchase_date"], response.json()["expiry_date"])
+        self.engine.dispose()
+        with TestClient(app) as restarted:
+            saved = restarted.get(url).json()
+            self.assertEqual((saved["purchase_date"], saved["expiry_date"], saved["quantity"]),
+                             ("2027-02-01", "2026-12-28", 0.5))
+            self.assertEqual((saved["status"], saved["days_left"]), ("expired", -3))
+
+    def test_quantity_boundaries_round_trip(self):
+        for quantity in (0.01, 0.29, 1.25, 99999999.99):
+            with self.subTest(quantity=quantity):
+                item = self.create(quantity=quantity)
+                self.assertEqual(item["quantity"], quantity)
+                self.assertEqual(self.client.get(f"/inventory/{item['id']}").json()["quantity"], quantity)
+
+    def test_constraint_conflict_returns_409_and_rolls_back(self):
+        item = self.create()
+        # Имитируем ограничение существующей БД, не меняя схему приложения.
+        with self.engine.begin() as connection:
+            connection.exec_driver_sql("""
+                CREATE TRIGGER test_conflict BEFORE UPDATE ON items
+                WHEN NEW.quantity = 3
+                BEGIN SELECT RAISE(ABORT, 'private database constraint'); END
+            """)
+        url = f"/inventory/{item['id']}"
+        response = self.client.patch(url, json={"quantity": 3})
+        self.assertEqual(response.status_code, 409, response.text)
+        self.assertEqual(response.json(), {"detail": "Операция нарушает ограничения базы данных. Проверьте связанные данные."})
+        self.assertEqual(self.client.get(url).json(), item)
+        self.assertEqual(self.client.patch(url, json={"quantity": 0.5}).json()["quantity"], 0.5)
 
     def test_errors_are_russian_and_located(self):
         for body in [{}, {"name": "Молоко"}, {"quantity": 2}, {"name": "Молоко", "quantity": 0}]:
@@ -184,7 +226,7 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.client.get("/categories/").json(), [{"id": 11, "name": "Молочные", "items_count": 2}])
         self.assertEqual(self.client.get("/storage-locations/").json()[0]["items_count"], 4)
 
-    def test_parallel_patches_preserve_changes_and_date_order(self):
+    def test_parallel_patches_preserve_changes_and_independent_dates(self):
         item = self.create(expiry_date="2027-01-10")
         url = f"/inventory/{item['id']}"
         with ThreadPoolExecutor(max_workers=2) as pool:
@@ -192,13 +234,12 @@ class ApiTests(unittest.TestCase):
         self.assertEqual([r.status_code for r in results], [200, 200])
         changed = self.client.get(url).json()
         self.assertEqual((changed["name"], changed["quantity"]), ("Кефир", 0.5))
-        # Каждая дата допустима относительно исходной записи, вместе они несовместимы.
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(lambda body: self.client.patch(url, json=body),
                                     [{"purchase_date": "2027-01-05"}, {"expiry_date": "2026-12-20"}]))
-        self.assertEqual(sorted(r.status_code for r in results), [200, 422])
+        self.assertEqual([r.status_code for r in results], [200, 200])
         changed = self.client.get(url).json()
-        self.assertLessEqual(changed["purchase_date"], changed["expiry_date"])
+        self.assertEqual((changed["purchase_date"], changed["expiry_date"]), ("2027-01-05", "2026-12-20"))
 
     def test_1000_items_search_filter_sort_and_stats_under_two_seconds(self):
         with self.factory() as db:
@@ -219,7 +260,11 @@ class ApiTests(unittest.TestCase):
         self.assertIn('id="stock-form"', response.text)
         for path in ("script.js", "stock-form.js", "style.css", "stock-form.css"):
             self.assertEqual(self.client.get("/ui/" + path).status_code, 200)
-        self.assertEqual(self.client.get("/openapi.json").status_code, 200)
+        spec = self.client.get("/openapi.json").json()
+        self.assertIn("errors", spec["components"]["schemas"]["InventoryErrorResponse"]["properties"])
+        for path, method in [("/inventory/", "post"), ("/inventory/{item_id}", "put"),
+                             ("/inventory/{item_id}", "patch"), ("/inventory/{item_id}", "delete")]:
+            self.assertIn("409", spec["paths"][path][method]["responses"])
 
 
 if __name__ == "__main__":

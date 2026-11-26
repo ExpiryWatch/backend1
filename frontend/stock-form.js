@@ -213,6 +213,10 @@ function validateProduct(product) {
     errors.quantity = 'Укажи количество';
   } else if (!Number.isFinite(product.quantity) || product.quantity <= 0) {
     errors.quantity = 'Количество должно быть больше нуля.';
+  } else if (product.quantity > 99999999.99) {
+    errors.quantity = 'Количество не должно превышать 99999999.99.';
+  } else if (Number(product.quantity.toFixed(2)) !== product.quantity) {
+    errors.quantity = 'Количество должно иметь не больше двух знаков после запятой.';
   }
 
   if (form.elements.purchase_date.validity.badInput) {
@@ -221,12 +225,6 @@ function validateProduct(product) {
 
   if (form.elements.expiry_date.validity.badInput) {
     errors.expiry_date = 'Укажи корректный срок годности.';
-  } else if (
-    product.purchase_date &&
-    product.expiry_date &&
-    product.expiry_date < product.purchase_date
-  ) {
-    errors.expiry_date = 'Срок годности не может быть раньше даты приобретения.';
   }
 
   for (const [name, message] of Object.entries(errors)) {

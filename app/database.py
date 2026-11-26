@@ -56,7 +56,7 @@ def get_db(request: Request) -> Iterator[Session]:
     db = SessionLocal()
     try:
         if request.method in ("POST", "PUT", "PATCH", "DELETE") and db.bind.dialect.name == "sqlite":
-            # Блокируем до чтения, чтобы параллельные PATCH не обходили проверку дат.
+            # Блокируем до чтения, чтобы параллельные изменения читали актуальную запись.
             db.connection().exec_driver_sql("BEGIN IMMEDIATE")
         yield db
     finally:

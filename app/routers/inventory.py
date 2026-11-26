@@ -1,6 +1,4 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
-from fastapi.exceptions import RequestValidationError
-from pydantic import ValidationError
 
 from app.schemas.inventory import (
     InventoryCreate,
@@ -91,6 +89,10 @@ def get_inventory_item(item_id: int, db: Session = Depends(get_db)):
     summary="Create inventory item",
     description="Create a new inventory item in the database.",
     responses={
+        409: {
+            "model": InventoryErrorResponse,
+            "description": "Database constraint conflict"
+        },
         422: {
             "model": InventoryErrorResponse,
             "description": "Invalid input data, category or storage location"
@@ -131,6 +133,10 @@ def create_inventory_item(
     summary="Update inventory item",
     description="Update an existing inventory item in the database.",
     responses={
+        409: {
+            "model": InventoryErrorResponse,
+            "description": "Database constraint conflict"
+        },
         404: {
             "model": InventoryErrorResponse,
             "description": "Inventory item not found"
@@ -185,6 +191,10 @@ def update_inventory_item(
     summary="Partially update inventory item",
     description="Update only the provided fields of an inventory item.",
     responses={
+        409: {
+            "model": InventoryErrorResponse,
+            "description": "Database constraint conflict"
+        },
         404: {
             "model": InventoryErrorResponse,
             "description": "Inventory item not found"
@@ -205,14 +215,6 @@ def patch_inventory_item(
     require_inventory_item(existing_item, item_id)
 
     data = item.model_dump(exclude_unset=True)
-
-    # PATCH проверяет обе даты после объединения с текущей записью.
-    current = {field: getattr(existing_item, field) for field in InventoryCreate.model_fields}
-    try:
-        InventoryCreate.model_validate(current | data)
-    except ValidationError as exc:
-        errors = [dict(error, loc=("body", *error["loc"])) for error in exc.errors()]
-        raise RequestValidationError(errors) from exc
 
     if data.get("category_id") is not None:
         category = db.get(Category, data["category_id"])
@@ -246,6 +248,10 @@ def patch_inventory_item(
     summary="Delete inventory item",
     description="Delete an inventory item from the database.",
     responses={
+        409: {
+            "model": InventoryErrorResponse,
+            "description": "Database constraint conflict"
+        },
         404: {
             "model": InventoryErrorResponse,
             "description": "Inventory item not found"

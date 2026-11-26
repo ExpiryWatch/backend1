@@ -27,8 +27,12 @@ const UPDATE_METHOD = 'PATCH';
 let deletingId = null;
 let deleting = false;
 
+const API_BASE_URL = window.location.port === '8000'
+  ? ''
+  : 'http://127.0.0.1:8000';
+
 export async function request(path = '/inventory/', options = {}) {
-  const response = await fetch(path, options);
+  const response = await fetch(API_BASE_URL + path, options);
   const contentType = response.headers.get('content-type') ?? '';
   const data = contentType.includes('json') ? await response.json() : null;
 

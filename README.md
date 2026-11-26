@@ -26,12 +26,12 @@ python -m venv .venv
 Если репозиторий ещё не клонирован:
 
 ```bash
-git clone --branch feature/business-rules-integration https://github.com/ExpiryWatch/backend1.git
+git clone --branch feature/backend-setup https://github.com/ExpiryWatch/backend1.git
 cd backend1
 ```
 
 В уже существующем клоне перейти в его корень и переключиться на
-`feature/business-rules-integration`. Затем выполнить:
+`feature/backend-setup`. Затем выполнить:
 
 ```bash
 python3 -m venv .venv
@@ -119,6 +119,37 @@ SQLite получает блокировку записи до чтения те
 `app/schemas/inventory.py` — общая валидация; `app/models/stock_item.py` — существующий расчёт сроков;
 `app/queries.py` — единая реализация поиска, фильтров, сортировки и статистики;
 `app/routers/` — API; `frontend/` — объединённый интерфейс; `tests/` — проверки интеграции.
+
+## Раздельный запуск frontend и backend
+
+Оба терминала должны быть открыты в корне репозитория
+с активированным виртуальным окружением.
+
+В первом терминале запустите backend:
+
+```bash
+python -m uvicorn app.main:app --reload
+```
+
+Во втором терминале запустите frontend:
+
+```bash
+python -m http.server 5500 --bind 127.0.0.1 --directory frontend
+```
+
+Адреса приложения:
+
+- Backend: http://127.0.0.1:8000
+- Swagger: http://127.0.0.1:8000/docs
+- Frontend: http://127.0.0.1:5500
+
+Для взаимодействия frontend с API настроен CORS.
+Разрешены локальные источники localhost и 127.0.0.1
+на портах 3000, 5173 и 5500.
+
+Также сохранён совместный режим запуска:
+http://127.0.0.1:8000/ui/
+
 
 ## Проверки
 

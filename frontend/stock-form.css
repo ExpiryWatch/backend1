@@ -1,0 +1,589 @@
+/* Strawberry Milk · UI Kit */
+:root {
+  --stock-canvas: #fff8fa;
+  --stock-blush: #f8dde7;
+  --stock-strawberry: #efa8bf;
+  --stock-primary: #d96b95;
+  --stock-plum: #633e50;
+  --stock-white: #ffffff;
+  --stock-border: #ecd9e1;
+  --stock-success: #4f9775;
+  --stock-danger: #c75472;
+  --stock-muted: #8a6e7d;
+  --stock-error-bg: #fff0f4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Manrope, Arial, sans-serif;
+  font-size: 15px;
+  color: var(--stock-plum);
+  background: var(--stock-canvas);
+}
+
+.stock-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.stock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.stock-page h1 {
+  font-size: 28px;
+  line-height: 36px;
+}
+
+.stock-page h1,
+.stock-panel h2 {
+  margin: 0;
+}
+
+.stock-page button,
+.stock-panel button,
+.stock-delete-dialog button {
+  padding: 0 18px;
+  min-height: 44px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--stock-plum);
+  background: var(--stock-white);
+  border: 1px solid var(--stock-border);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+button.stock-primary {
+  color: var(--stock-white);
+  background: var(--stock-primary);
+  border-color: var(--stock-primary);
+}
+
+button.stock-primary:hover {
+  background: #c55384;
+  border-color: #c55384;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+#stock-status {
+  width: fit-content;
+  padding: 8px 12px;
+  color: var(--stock-success);
+  background: #edf6ef;
+  border: 1px solid #d6e9dc;
+  border-radius: 8px;
+}
+
+#stock-status:empty {
+  display: none;
+}
+
+#stock-list {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.stock-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  background: var(--stock-white);
+  border: 1px solid var(--stock-border);
+  border-radius: 12px;
+}
+
+.stock-list-item span {
+  overflow-wrap: anywhere;
+}
+
+/* Боковая панель */
+
+.stock-panel {
+  position: fixed;
+  inset: 0 0 0 auto;
+
+  width: 480px;
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+
+  font-family: inherit;
+  color: var(--stock-plum);
+  background: var(--stock-white);
+  border: none;
+  box-shadow: -16px 0 48px rgb(99 62 80 / 18%);
+}
+
+/* Скрытый dialog сохраняет стандартное поведение браузера */
+.stock-panel[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.stock-panel::backdrop,
+.stock-delete-dialog::backdrop {
+  background: rgb(99 62 80 / 35%);
+  backdrop-filter: blur(1px);
+}
+
+.stock-delete-dialog::backdrop {
+  background: rgb(99 62 80 / 43%);
+}
+
+/* Заголовок и крестик */
+
+.stock-panel > .stock-header {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+
+  min-height: 114px;
+  padding: 32px 74px 24px 30px;
+  border-bottom: 1px solid var(--stock-border);
+}
+
+.stock-panel h2 {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 30px;
+}
+
+#stock-description {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--stock-muted);
+}
+
+#stock-description span {
+  color: var(--stock-primary);
+}
+
+.stock-panel button.stock-close {
+  position: absolute;
+  top: 30px;
+  right: 32px;
+
+  display: grid;
+  place-items: center;
+
+  width: 34px;
+  min-height: 34px;
+  height: 34px;
+  padding: 0;
+
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+
+  color: var(--stock-primary);
+  background: transparent;
+  border: 0;
+  isolation: isolate;
+}
+
+.stock-panel button.stock-close::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: rotate(45deg);
+  background: var(--stock-blush);
+  border: 1px solid var(--stock-border);
+  border-radius: 12px;
+}
+
+.stock-panel button.stock-close:hover::before {
+  background: var(--stock-strawberry);
+}
+
+/* Поля формы */
+
+.stock-form {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  gap: 16px;
+
+  margin: 0;
+  padding: 24px 30px 0;
+}
+
+.stock-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.stock-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+
+/* Количество шире единицы измерения, как в макете */
+.stock-form > .stock-row:first-of-type {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.stock-field input,
+.stock-field select,
+.stock-field textarea {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0 14px;
+
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 18px;
+
+  color: var(--stock-plum);
+  background: var(--stock-white);
+  border: 1px solid var(--stock-border);
+  border-radius: 8px;
+}
+
+.stock-field input,
+.stock-field select {
+  height: 44px;
+}
+
+.stock-field textarea {
+  height: 100px;
+  min-height: 100px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  resize: vertical;
+}
+
+.stock-field input::placeholder,
+.stock-field textarea::placeholder {
+  color: var(--stock-muted);
+  opacity: 1;
+}
+
+.stock-field select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.stock-field input:focus,
+.stock-field select:focus,
+.stock-field textarea:focus {
+  border-color: var(--stock-primary);
+  outline: 2px solid var(--stock-primary);
+  outline-offset: -2px;
+}
+
+.stock-field [aria-invalid="true"] {
+  border-color: var(--stock-danger);
+  background: var(--stock-error-bg);
+}
+
+.stock-field [aria-invalid="true"]:focus {
+  border-color: var(--stock-danger);
+  outline-color: var(--stock-danger);
+}
+
+.stock-field :is(input, select, textarea):disabled {
+  color: var(--stock-muted);
+  background: var(--stock-canvas);
+  border-color: var(--stock-border);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.stock-required {
+  color: var(--stock-danger);
+}
+
+.stock-field .stock-error {
+  margin-top: -4px;
+}
+
+.stock-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--stock-danger);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.stock-error:empty {
+  display: none;
+}
+
+/* Кнопки на экране редактирования */
+.stock-panel button.stock-save {
+  color: var(--stock-white);
+  background: var(--stock-primary);
+  border-color: var(--stock-primary);
+}
+
+.stock-panel button.stock-save:hover {
+  background: #c55384;
+  border-color: #c55384;
+}
+
+.stock-panel button.stock-cancel {
+  background: var(--stock-white);
+  border-color: var(--stock-border);
+}
+
+.stock-panel button.stock-cancel:hover {
+  background: var(--stock-canvas);
+}
+
+.stock-delete-dialog button.stock-cancel {
+  background: var(--stock-blush);
+  border-color: var(--stock-blush);
+}
+
+.stock-delete-dialog button.stock-cancel:hover {
+  background: var(--stock-strawberry);
+  border-color: var(--stock-strawberry);
+}
+
+.stock-panel button:focus-visible,
+.stock-delete-dialog button:focus-visible {
+  outline: 2px solid var(--stock-plum);
+  outline-offset: 2px;
+}
+
+/* Нижняя полоса с кнопками */
+
+.stock-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stock-form > .stock-actions {
+  flex-shrink: 0;
+  min-height: 82px;
+  margin: auto -30px 0;
+  padding: 16px 30px 20px;
+  border-top: 1px solid var(--stock-border);
+}
+
+.stock-form > .stock-actions button {
+  height: 44px;
+}
+
+.stock-form > .stock-actions .stock-save {
+  min-width: 166px;
+}
+
+.stock-delete-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(420px, calc(100% - 32px));
+  max-width: 100%;
+  min-height: min(270px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 28px;
+  color: var(--stock-plum);
+  background: var(--stock-white);
+  border: 1px solid var(--stock-border);
+  border-radius: 20px;
+  box-shadow: 0 24px 56px rgb(65 42 56 / 20%);
+}
+
+.stock-delete-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.stock-delete-dialog .stock-actions {
+  margin-top: auto;
+}
+
+.stock-delete-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  margin-bottom: 20px;
+  color: var(--stock-danger);
+  background: var(--stock-blush);
+  border-radius: 12px;
+}
+
+.stock-delete-bin {
+  position: relative;
+  width: 12px;
+  height: 13px;
+  margin-top: 4px;
+  border: 1.5px solid currentColor;
+  border-top: 0;
+  border-radius: 0 0 3px 3px;
+  background:
+    linear-gradient(currentColor, currentColor) 3px center / 1px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) 6px center / 1px 6px no-repeat;
+}
+
+.stock-delete-bin::before,
+.stock-delete-bin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.stock-delete-bin::before {
+  top: -1px;
+  width: 16px;
+  border-top: 1.5px solid currentColor;
+}
+
+.stock-delete-bin::after {
+  top: -4px;
+  width: 6px;
+  height: 3px;
+  border: 1.5px solid currentColor;
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+}
+
+.stock-delete-dialog h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  line-height: 28px;
+}
+
+#stock-delete-text {
+  margin: 0 0 16px;
+  color: var(--stock-muted);
+  font-size: 15px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+#stock-delete-text strong {
+  color: var(--stock-plum);
+}
+
+.stock-delete-dialog .stock-actions button {
+  min-width: 104px;
+  font-weight: 600;
+}
+
+.stock-delete-dialog button.stock-danger {
+  color: var(--stock-white);
+  background: var(--stock-danger);
+  border-color: var(--stock-danger);
+}
+
+.stock-delete-dialog button.stock-danger:hover {
+  background: #903c46;
+  border-color: #903c46;
+}
+
+/* Компактные отступы для невысоких окон */
+
+@media (max-height: 800px) {
+  .stock-panel > .stock-header {
+    min-height: 90px;
+    padding-top: 20px;
+    padding-bottom: 16px;
+  }
+
+  .stock-panel button.stock-close {
+    top: 18px;
+  }
+
+  .stock-form {
+    gap: 12px;
+    padding-top: 16px;
+  }
+
+  .stock-field textarea {
+    height: 76px;
+    min-height: 76px;
+  }
+
+  .stock-form > .stock-actions {
+    min-height: 70px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+}
+
+/* Телефоны */
+
+@media (max-width: 480px) {
+  .stock-page {
+    padding: 20px;
+  }
+
+  .stock-page > .stock-header {
+    flex-wrap: wrap;
+  }
+
+  .stock-panel > .stock-header {
+    padding-left: 20px;
+    padding-right: 68px;
+  }
+
+  .stock-panel button.stock-close {
+    right: 20px;
+  }
+
+  .stock-panel h2 {
+    font-size: 22px;
+  }
+
+  .stock-form {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .stock-form > .stock-actions {
+    margin-right: -20px;
+    margin-left: -20px;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+}
+
+@media (max-width: 340px) {
+  .stock-row,
+  .stock-form > .stock-row:first-of-type {
+    grid-template-columns: 1fr;
+  }
+}

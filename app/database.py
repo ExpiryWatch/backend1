@@ -7,6 +7,8 @@
 import os
 from typing import Iterator
 
+from fastapi import Request
+
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -49,10 +51,13 @@ engine = make_engine()
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
-def get_db() -> Iterator[Session]:
+def get_db(request: Request) -> Iterator[Session]:
     """FastAPI-зависимость: `db: Session = Depends(get_db)`."""
     db = SessionLocal()
     try:
+        if request.method in ("POST", "PUT", "PATCH", "DELETE") and db.bind.dialect.name == "sqlite":
+            # Блокируем до чтения, чтобы параллельные PATCH не обходили проверку дат.
+            db.connection().exec_driver_sql("BEGIN IMMEDIATE")
         yield db
     finally:
         db.close()

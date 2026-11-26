@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Запасы</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./stock-form.css">
+    <script type="module" src="./script.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar__brand">
+                <strong>Запасы</strong>
+                <small>Домашний учёт</small>
+            </div>
+        
+
+            <p class="sidebar__label">Меню</p>
+
+            <nav class="sidebar__nav" aria-label="Основное меню">
+                <a href="./index.html" aria-current="page">Мои запасы</a>
+            </nav>
+            <div class="sidebar__note">
+                <strong>Всё под контролем</strong>
+                <p>Проверяйте сроки регулярно</p>
+            </div>
+        </aside>
+    
+
+    <main class="page">
+        <header class="page-header">
+            <div class="page-header__text">
+                <p class="page-header__label">Домашняя кладовая</p>
+                <h1>Мои запасы</h1>
+                <p class="page-header__description">
+                    Все продукты и сроки годности в одном месте ♡
+                </p>
+            </div>
+
+            <button id="stock-add" class="add-button" type="button">
+                <span>+ Добавить продукт</span>
+            </button>
+        </header>
+        <p id="stock-status" role="status"></p>
+        <p id="stock-page-error" class="stock-error" role="alert"></p>
+        <section class="stats" aria-label="Статистика продуктов">
+            <div class="stat-card">
+                <p class="stat-card__label">Всего продуктов</p>
+                <strong class="stat-card__value" data-stat="total">—</strong>
+            </div>
+
+            <div class="stat-card">
+                <p class="stat-card__label">Годны</p>
+                <strong class="stat-card__value" data-stat="fresh">—</strong>
+            </div>
+
+            <div class="stat-card">
+                <p class="stat-card__label">Скоро истекает</p>
+                <strong class="stat-card__value" data-stat="expiring_soon">—</strong>
+            </div>
+
+            <div class="stat-card">
+                <p class="stat-card__label">Просрочено</p>
+                <strong class="stat-card__value" data-stat="expired">—</strong>
+            </div>
+            <div class="stat-card">
+                <p class="stat-card__label">Срок не указан</p>
+                <strong class="stat-card__value" data-stat="no_date">—</strong>
+            </div>
+        </section>
+        
+        <section class="products" aria-labelledby="products-title">
+            <div class="products__header">
+                <h2 id="products-title">
+                    Список продуктов
+                    <span class="products__count">Загрузка…</span>
+                </h2>
+
+                <div class="products__tools">
+                    <input
+                        class="products__search"
+                        type="search"
+                        placeholder="Найти продукт..."
+                        aria-label="Поиск продуктов"
+                    >
+
+                    <select
+                        class="products__filter"
+                        aria-label="Фильтр по сроку годности"
+                    >
+                        <option value="all">Все статусы</option>
+                        <option value="fresh">Годен</option>
+                        <option value="expiring_soon">Скоро истекает</option>
+                        <option value="expired">Просрочено</option>
+                        <option value="no_date">Срок не указан</option>   
+                    </select>
+                    <select class="products__sort" aria-label="Сортировка продуктов">
+                        <option value="name">По названию</option>
+                        <option value="expiry">По сроку годности</option>
+                    </select>
+                    <select class="products__order" aria-label="Направление сортировки"><option value="asc">По возрастанию</option><option value="desc">По убыванию</option></select>
+                    <select class="products__location" aria-label="Место хранения"><option value="all">Все места хранения</option></select>
+                    <select class="products__category" aria-label="Категория продуктов"><option value="all">Все категории</option></select>
+                </div>
+            </div>
+
+            <div class="products__list" aria-busy="true"></div>
+            <div class="products__empty" id="empty-stock" hidden>
+                <h3>Пока пусто</h3>
+                <p>Добавь первый продукт, чтобы отслеживать его срок годности.</p>
+                <button class="add-button" type="button">Добавить продукт</button>
+            </div>
+
+            <div class="products__empty" id="empty-search" hidden>
+                <h3>Ничего не найдено</h3>
+                <p>Измени запрос или выбери статус.</p>
+            </div>
+        </section>
+    </main>
+    </div>
+
+  <dialog id="stock-panel" class="stock-panel" aria-labelledby="stock-title"
+    aria-describedby="stock-description">
+    <header class="stock-header">
+      <h2 id="stock-title">Добавить продукт</h2>
+      <p id="stock-description">Заполни информацию о новом продукте <span aria-hidden="true">♡</span></p>
+      <button id="stock-close" class="stock-close" type="button"
+        aria-label="Закрыть форму">×</button>
+    </header>
+
+    <form id="stock-form" class="stock-form" novalidate>
+      <label class="stock-field">
+        <span>Наименование продукта <span class="stock-required" aria-hidden="true">*</span></span>
+        <input name="name" maxlength="255" required placeholder="Например, творог"
+          aria-describedby="error-name">
+        <span id="error-name" class="stock-error"></span>
+      </label>
+
+      <div class="stock-row">
+        <label class="stock-field">
+          <span>Количество <span class="stock-required" aria-hidden="true">*</span></span>
+          <input name="quantity" type="number" step="0.01" min="0.01" max="99999999.99" placeholder="0" required
+            aria-describedby="error-quantity">
+          <span id="error-quantity" class="stock-error"></span>
+        </label>
+
+        <label class="stock-field">
+          Единица измерения
+          <select name="unit" aria-describedby="error-unit">
+            <option value="шт">шт.</option>
+            <option value="кг">кг</option>
+            <option value="г">г</option>
+            <option value="л">л</option>
+            <option value="мл">мл</option>
+            <option value="уп">уп</option>
+          </select>
+          <span id="error-unit" class="stock-error"></span>
+        </label>
+      </div>
+
+      <label class="stock-field">
+        Категория
+        <select name="category_id" aria-describedby="error-category_id"><option value="">Без категории</option></select>
+        <span id="error-category_id" class="stock-error"></span>
+      </label>
+
+      <label class="stock-field">
+        Место хранения
+        <select name="storage_location_id" aria-describedby="error-storage_location_id"><option value="">Без места хранения</option></select>
+        <span id="error-storage_location_id" class="stock-error"></span>
+      </label>
+
+      <div class="stock-row">
+        <label class="stock-field">
+          Дата приобретения
+          <input name="purchase_date" type="date"
+            aria-describedby="error-purchase_date">
+          <span id="error-purchase_date" class="stock-error"></span>
+        </label>
+
+        <label class="stock-field">
+          Срок годности
+          <input name="expiry_date" type="date"
+            aria-describedby="error-expiry_date">
+          <span id="error-expiry_date" class="stock-error"></span>
+        </label>
+      </div>
+
+      <label class="stock-field">
+        Комментарий
+        <textarea name="comment" rows="2" placeholder="Дополнительная информация о продукте"
+          aria-describedby="error-comment"></textarea>
+        <span id="error-comment" class="stock-error"></span>
+      </label>
+
+      <p id="stock-form-error" class="stock-error" role="alert"></p>
+
+      <footer class="stock-actions">
+        <button id="stock-cancel" class="stock-cancel" type="button">Отмена</button>
+        <button id="stock-save" class="stock-save" type="submit">
+          Сохранить продукт
+        </button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="stock-delete-dialog" class="stock-delete-dialog"
+    aria-labelledby="stock-delete-title" aria-describedby="stock-delete-text">
+    <div class="stock-delete-icon" aria-hidden="true">
+      <span class="stock-delete-bin"></span>
+    </div>
+    <h2 id="stock-delete-title">Удалить продукт?</h2>
+    <p id="stock-delete-text">Вы уверены, что хотите удалить <strong>„<span id="stock-delete-name"></span>“</strong>? Это действие нельзя отменить</p>
+    <p id="stock-delete-error" class="stock-error" role="alert"></p>
+    <footer class="stock-actions">
+      <button id="stock-delete-cancel" class="stock-cancel" type="button" autofocus>Отмена</button>
+      <button id="stock-delete-confirm" class="stock-danger" type="button">Удалить</button>
+    </footer>
+  </dialog>
+
+</body>
+</html>

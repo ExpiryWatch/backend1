@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 
 from app.schemas.inventory import (
-    InventoryBase,
     InventoryCreate,
     InventoryPatch,
     InventoryPut,
     InventoryRead,
-    InventoryUpdateResponse,
     InventoryDeleteResponse,
     InventoryErrorResponse,
 )
@@ -206,12 +206,13 @@ def patch_inventory_item(
 
     data = item.model_dump(exclude_unset=True)
 
-    for field in ("name", "quantity", "unit"):
-        if field in data and data[field] is None:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Поле {field} не может быть null"
-            )
+    # PATCH проверяет обе даты после объединения с текущей записью.
+    current = {field: getattr(existing_item, field) for field in InventoryCreate.model_fields}
+    try:
+        InventoryCreate.model_validate(current | data)
+    except ValidationError as exc:
+        errors = [dict(error, loc=("body", *error["loc"])) for error in exc.errors()]
+        raise RequestValidationError(errors) from exc
 
     if data.get("category_id") is not None:
         category = db.get(Category, data["category_id"])
@@ -272,6 +273,6 @@ def require_inventory_item(item, item_id: int):
     if item is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Inventory item with ID {item_id} not found"
+            detail=f"Позиция с ID {item_id} не найдена"
         )
     return item

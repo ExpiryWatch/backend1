@@ -21,7 +21,8 @@ class StatsResponse(BaseModel):
 @router.get(
     "/",
     response_model=StatsResponse,
-    summary="Get inventory statistics"
+    summary="Get inventory statistics",
+    description="Return the total number of inventory items and their counts by expiry status."
 )
 def get_inventory_stats(db: Session = Depends(get_db)):
     return get_stats(db)

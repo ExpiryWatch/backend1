@@ -131,7 +131,11 @@ def create_inventory_item(
     "/{item_id}",
     response_model=InventoryRead,
     summary="Update inventory item",
-    description="Update an existing inventory item in the database.",
+    description=(
+            "Fully update an existing inventory item. "
+            "All eight input fields must be provided. "
+            "Optional values may be null."
+    ),
     responses={
         409: {
             "model": InventoryErrorResponse,
@@ -189,7 +193,11 @@ def update_inventory_item(
     "/{item_id}",
     response_model=InventoryRead,
     summary="Partially update inventory item",
-    description="Update only the provided fields of an inventory item.",
+    description=(
+            "Update only the provided fields of an inventory item. "
+            "Omitted fields remain unchanged. "
+            "The name, quantity and unit fields cannot be null."
+    ),
     responses={
         409: {
             "model": InventoryErrorResponse,

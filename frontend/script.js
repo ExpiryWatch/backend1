@@ -3,6 +3,8 @@ import { request, openForm, editProduct, openDeleteDialog } from './stock-form.j
 const list = document.querySelector('.products__list');
 const count = document.querySelector('.products__count');
 const pageError = document.querySelector('#stock-page-error');
+const retryButton = document.querySelector('#stock-retry');
+const loadingMessage = document.querySelector('#stock-loading');
 const emptyStock = document.querySelector('#empty-stock');
 const emptySearch = document.querySelector('#empty-search');
 const search = document.querySelector('.products__search');
@@ -72,6 +74,9 @@ async function loadProducts() {
         if (select.value !== 'all') params.set(name, select.value);
     }
     list.setAttribute('aria-busy', 'true');
+    loadingMessage.hidden = false;
+    retryButton.hidden = true;
+    retryButton.disabled = true;
     pageError.textContent = '';
     try {
         const [products, stats, categories, locations] = await Promise.all([
@@ -92,25 +97,31 @@ async function loadProducts() {
         count.textContent = `${products.length} из ${stats.total}`;
         emptyStock.hidden = stats.total > 0;
         emptySearch.hidden = stats.total === 0 || products.length > 0;
-        document.querySelectorAll('.add-button').forEach(button => { button.disabled = false; });
+        document.querySelectorAll('.add-button:not(#stock-retry)').forEach(button => { button.disabled = false; });
     } catch (error) {
         if (current !== generation) return;
         pageError.textContent = error instanceof TypeError
             ? 'Не удалось связаться с сервером. Проверьте запуск приложения и повторите действие.'
             : error.message;
         count.textContent = 'Не удалось обновить список';
+        retryButton.hidden = false;
         emptyStock.hidden = true;
         emptySearch.hidden = true;
     } finally {
-        if (current === generation) list.setAttribute('aria-busy', 'false');
+        if (current === generation) {
+            list.setAttribute('aria-busy', 'false');
+            loadingMessage.hidden = true;
+            retryButton.disabled = false;
+        }
     }
 }
 
-for (const button of document.querySelectorAll('.add-button')) {
+for (const button of document.querySelectorAll('.add-button:not(#stock-retry)')) {
     button.disabled = true;
     if (button.id !== 'stock-add') button.addEventListener('click', () => openForm());
 }
 search.addEventListener('input', loadProducts);
+retryButton.addEventListener('click', loadProducts);
 for (const select of [status, category, location, sort, order]) {
     select.addEventListener('change', loadProducts);
 }

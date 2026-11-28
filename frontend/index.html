@@ -44,7 +44,10 @@
             </button>
         </header>
         <p id="stock-status" role="status"></p>
-        <p id="stock-page-error" class="stock-error" role="alert"></p>
+        <div class="stock-load-error">
+            <p id="stock-page-error" class="stock-error" role="alert"></p>
+            <button id="stock-retry" class="add-button" type="button" hidden>Повторить загрузку</button>
+        </div>
         <section class="stats" aria-label="Статистика продуктов">
             <div class="stat-card">
                 <p class="stat-card__label">Всего продуктов</p>
@@ -106,6 +109,7 @@
                 </div>
             </div>
 
+            <p id="stock-loading" role="status">Загрузка запасов…</p>
             <div class="products__list" aria-busy="true"></div>
             <div class="products__empty" id="empty-stock" hidden>
                 <h3>Пока пусто</h3>
@@ -131,24 +135,24 @@
     </header>
 
     <form id="stock-form" class="stock-form" novalidate>
-      <label class="stock-field">
-        <span>Наименование продукта <span class="stock-required" aria-hidden="true">*</span></span>
-        <input name="name" maxlength="255" required placeholder="Например, творог"
+      <div class="stock-field">
+        <label for="stock-field-name">Наименование продукта <span class="stock-required" aria-hidden="true">*</span></label>
+        <input id="stock-field-name" name="name" maxlength="255" required autofocus placeholder="Например, творог"
           aria-describedby="error-name">
         <span id="error-name" class="stock-error"></span>
-      </label>
+      </div>
 
       <div class="stock-row">
-        <label class="stock-field">
-          <span>Количество <span class="stock-required" aria-hidden="true">*</span></span>
-          <input name="quantity" type="number" step="0.01" min="0.01" max="99999999.99" placeholder="0" required
+        <div class="stock-field">
+        <label for="stock-field-quantity">Количество <span class="stock-required" aria-hidden="true">*</span></label>
+        <input id="stock-field-quantity" name="quantity" type="number" inputmode="decimal" step="0.01" min="0.01" max="99999999.99" placeholder="0" required
             aria-describedby="error-quantity">
           <span id="error-quantity" class="stock-error"></span>
-        </label>
+      </div>
 
-        <label class="stock-field">
-          Единица измерения
-          <select name="unit" aria-describedby="error-unit">
+        <div class="stock-field">
+        <label for="stock-field-unit">Единица измерения</label>
+        <select id="stock-field-unit" name="unit" aria-describedby="error-unit">
             <option value="шт">шт.</option>
             <option value="кг">кг</option>
             <option value="г">г</option>
@@ -157,43 +161,43 @@
             <option value="уп">уп</option>
           </select>
           <span id="error-unit" class="stock-error"></span>
-        </label>
+      </div>
       </div>
 
-      <label class="stock-field">
-        Категория
-        <select name="category_id" aria-describedby="error-category_id"><option value="">Без категории</option></select>
+      <div class="stock-field">
+        <label for="stock-field-category_id">Категория</label>
+        <select id="stock-field-category_id" name="category_id" aria-describedby="error-category_id"><option value="">Без категории</option></select>
         <span id="error-category_id" class="stock-error"></span>
-      </label>
+      </div>
 
-      <label class="stock-field">
-        Место хранения
-        <select name="storage_location_id" aria-describedby="error-storage_location_id"><option value="">Без места хранения</option></select>
+      <div class="stock-field">
+        <label for="stock-field-storage_location_id">Место хранения</label>
+        <select id="stock-field-storage_location_id" name="storage_location_id" aria-describedby="error-storage_location_id"><option value="">Без места хранения</option></select>
         <span id="error-storage_location_id" class="stock-error"></span>
-      </label>
+      </div>
 
       <div class="stock-row">
-        <label class="stock-field">
-          Дата приобретения
-          <input name="purchase_date" type="date"
+        <div class="stock-field">
+        <label for="stock-field-purchase_date">Дата приобретения</label>
+        <input id="stock-field-purchase_date" name="purchase_date" type="date"
             aria-describedby="error-purchase_date">
           <span id="error-purchase_date" class="stock-error"></span>
-        </label>
-
-        <label class="stock-field">
-          Срок годности
-          <input name="expiry_date" type="date"
-            aria-describedby="error-expiry_date">
-          <span id="error-expiry_date" class="stock-error"></span>
-        </label>
       </div>
 
-      <label class="stock-field">
-        Комментарий
-        <textarea name="comment" rows="2" placeholder="Дополнительная информация о продукте"
+        <div class="stock-field">
+        <label for="stock-field-expiry_date">Срок годности</label>
+        <input id="stock-field-expiry_date" name="expiry_date" type="date"
+            aria-describedby="error-expiry_date">
+          <span id="error-expiry_date" class="stock-error"></span>
+      </div>
+      </div>
+
+      <div class="stock-field">
+        <label for="stock-field-comment">Комментарий</label>
+        <textarea id="stock-field-comment" name="comment" rows="2" placeholder="Дополнительная информация о продукте"
           aria-describedby="error-comment"></textarea>
         <span id="error-comment" class="stock-error"></span>
-      </label>
+      </div>
 
       <p id="stock-form-error" class="stock-error" role="alert"></p>
 

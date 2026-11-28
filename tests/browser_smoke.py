@@ -24,10 +24,19 @@ def main():
             page = browser.new_page(viewport={"width": 1280, "height": 900})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
+            page.route('**/stats/', lambda route: route.fulfill(
+                status=503, json={"detail": "Проверка повторной загрузки"}))
             page.goto(f"http://127.0.0.1:{port}/ui/")
+            expect(page.locator('#stock-retry')).to_be_visible()
+            expect(page.locator('#stock-loading')).not_to_be_visible()
+            expect(page.locator('#stock-add')).to_be_disabled()
+            page.unroute('**/stats/')
+            page.locator('#stock-retry').click()
             expect(page.locator('#stock-add')).to_be_enabled()
+            expect(page.locator('#stock-retry')).not_to_be_visible()
             expect(page.locator('#empty-stock')).to_be_visible()
             page.locator('#stock-add').click()
+            expect(page.locator('[name="name"]')).to_be_focused()
             page.locator('[name="name"]').fill('Молоко интеграция')
             page.locator('[name="quantity"]').fill('0')
             page.locator('#stock-save').click()
@@ -68,24 +77,63 @@ def main():
             cards.locator('.product-card__edit').click()
             expect(page.locator('[name="category_id"]')).to_have_value('11')
             expect(page.locator('[name="purchase_date"]')).to_have_value('2027-01-01')
+            item_id = cards.get_attribute('data-id')
+            item_url = f"http://127.0.0.1:{port}/inventory/{item_id}"
+            external = page.request.patch(item_url, data={"comment": "Изменено другим запросом"})
+            assert external.ok, external.text()
             page.locator('[name="purchase_date"]').fill('2027-02-01')
             name = 'Кефир <img src=x onerror=alert(1)> ' + 'ДлинноеНазвание' * 10
             page.locator('[name="name"]').fill(name)
             page.locator('[name="quantity"]').fill('1.25')
+            patch_bodies = []
+            def check_save(route):
+                if route.request.method == 'PATCH':
+                    assert page.locator('#stock-form').get_attribute('aria-busy') == 'true'
+                    assert page.locator('#stock-form :is(input, select, textarea, button):enabled').count() == 0
+                    assert page.locator('#stock-close').is_disabled()
+                    assert page.locator('#stock-save').text_content() == 'Сохранение…'
+                    patch_bodies.append(route.request.post_data_json)
+                route.continue_()
+            page.route('**/inventory/' + item_id, check_save)
             page.locator('#stock-save').click()
             expect(page.locator('#stock-panel')).not_to_be_visible()
+            page.unroute('**/inventory/' + item_id, check_save)
+            assert patch_bodies == [{"name": name, "quantity": 1.25, "purchase_date": "2027-02-01"}], patch_bodies
+            assert page.request.get(item_url).json()['comment'] == 'Изменено другим запросом'
             page.locator('.products__search').fill('Кефир')
             expect(cards).to_contain_text(name)
             expect(cards.locator('img')).to_have_count(0)
             page.set_viewport_size({"width": 360, "height": 800})
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mobile page overflows'
+            assert cards.first.bounding_box()['width'] >= page.locator('.products__list').bounding_box()['width'] - 1, 'Mobile card does not fill the row'
             cards.locator('.product-card__edit').click()
             expect(page.locator('[name="purchase_date"]')).to_have_value('2027-02-01')
+            expect(page.locator('[name="comment"]')).to_have_value('Изменено другим запросом')
+            page.locator('[name="comment"]').fill('')
             page.locator('#stock-save').scroll_into_view_if_needed()
             expect(page.locator('#stock-save')).to_be_in_viewport()
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mobile form overflows'
             page.screenshot(path=str(fixture.directory.name + '/mobile.png'), full_page=True)
-            page.locator('#stock-cancel').click()
+            def reject_save(route):
+                if route.request.method == 'PATCH':
+                    route.fulfill(status=422, json={
+                        "detail": "body.comment: Проверка ошибки поля",
+                        "errors": [{"loc": ["body", "comment"], "msg": "Проверка ошибки поля"}]
+                    })
+                else:
+                    route.continue_()
+            page.route('**/inventory/' + item_id, reject_save)
+            page.locator('#stock-save').click()
+            expect(page.locator('#error-comment')).to_have_text('Проверка ошибки поля')
+            expect(page.locator('[name="comment"]')).to_be_enabled()
+            expect(page.locator('[name="comment"]')).to_be_focused()
+            expect(page.locator('[name="comment"]')).to_have_value('')
+            page.unroute('**/inventory/' + item_id, reject_save)
+            with page.expect_request(lambda request: request.method == 'PATCH') as clear_request:
+                page.locator('#stock-save').click()
+            assert clear_request.value.post_data_json == {"comment": None}
+            expect(page.locator('#stock-panel')).not_to_be_visible()
+            assert page.request.get(item_url).json()['comment'] is None
             cards.locator('.product-card__delete').click()
             page.locator('#stock-delete-cancel').click()
             expect(cards).to_have_count(1)

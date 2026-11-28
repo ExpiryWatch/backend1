@@ -21,7 +21,9 @@ const fields = [
 ];
 
 let editingId = null;
+let editingInitial = null;
 let saving = false;
+let opening = false;
 
 const UPDATE_METHOD = 'PATCH';
 let deletingId = null;
@@ -137,6 +139,7 @@ function fillField(name, value) {
 }
 
 export function openForm(product = null, id = null) {
+  if (saving || deleting || panel.open || deleteDialog.open) return;
   editingId = id;
   statusMessage.textContent = '';
 
@@ -151,7 +154,6 @@ export function openForm(product = null, id = null) {
   description.firstChild.textContent = product
     ? 'Измени информацию о продукте '
     : 'Заполни информацию о новом продукте ';
-  saveButton.textContent = product ? 'Сохранить изменения' : 'Сохранить продукт';
 
   if (product) {
     for (const name of fields) {
@@ -159,14 +161,22 @@ export function openForm(product = null, id = null) {
     }
   }
 
+  editingInitial = product ? readProduct() : null;
+  setSaving(false);
+
   if (!panel.open) {
     panel.showModal();
+    panel.scrollTop = 0;
   }
 }
 
 export async function editProduct(id, button) {
+  if (opening || saving || deleting || panel.open || deleteDialog.open) return;
+  opening = true;
   pageError.textContent = '';
+  const label = button.textContent;
   button.disabled = true;
+  button.textContent = 'Загрузка…';
 
   try {
     const product = await request(productPath(id));
@@ -176,12 +186,16 @@ export async function editProduct(id, button) {
     }
 
     if (!panel.open && !deleteDialog.open) {
+      button.disabled = false;
+      button.focus();
       openForm(product, id);
     }
   } catch (error) {
     pageError.textContent = errorMessage(error);
   } finally {
     button.disabled = false;
+    button.textContent = label;
+    opening = false;
   }
 }
 
@@ -242,7 +256,10 @@ function validateProduct(product) {
 
 function setSaving(value) {
   saving = value;
-  saveButton.disabled = value;
+  form.setAttribute('aria-busy', String(value));
+  const label = editingId === null ? 'Сохранить продукт' : 'Сохранить изменения';
+  saveButton.textContent = value ? 'Сохранение…' : label;
+  for (const control of form.elements) control.disabled = value;
   closeButton.disabled = value;
   cancelButton.disabled = value;
 }
@@ -257,6 +274,9 @@ form.addEventListener('submit', async (event) => {
 
   const isEditing = editingId !== null;
   const path = isEditing ? productPath(editingId) : '/inventory/';
+  const body = isEditing
+    ? Object.fromEntries(Object.entries(product).filter(([name, value]) => value !== editingInitial[name]))
+    : product;
 
   setSaving(true);
 
@@ -264,7 +284,7 @@ form.addEventListener('submit', async (event) => {
     await request(path, {
       method: isEditing ? UPDATE_METHOD : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product)
+      body: JSON.stringify(body)
     });
 
     panel.close();
@@ -275,6 +295,7 @@ form.addEventListener('submit', async (event) => {
 
     await loadProducts();
   } catch (error) {
+    setSaving(false);
     showSaveError(error);
   } finally {
     setSaving(false);
@@ -282,7 +303,7 @@ form.addEventListener('submit', async (event) => {
 });
 
 addButton.addEventListener('click', () => {
-  if (!saving && !deleting) openForm();
+  if (!opening && !saving && !deleting) openForm();
 });
 
 closeButton.addEventListener('click', () => panel.close());
@@ -293,6 +314,7 @@ panel.addEventListener('cancel', (event) => {
 });
 
 export function openDeleteDialog(product) {
+  if (opening || saving || deleting || panel.open || deleteDialog.open) return;
   deletingId = product.id;
   statusMessage.textContent = '';
   deleteError.textContent = '';
@@ -311,6 +333,7 @@ deleteConfirm.addEventListener('click', async () => {
 
   deleting = true;
   deleteConfirm.disabled = true;
+  deleteConfirm.textContent = 'Удаление…';
   deleteCancel.disabled = true;
   deleteError.textContent = '';
 
@@ -325,6 +348,7 @@ deleteConfirm.addEventListener('click', async () => {
   } finally {
     deleting = false;
     deleteConfirm.disabled = false;
+    deleteConfirm.textContent = 'Удалить';
     deleteCancel.disabled = false;
   }
 });

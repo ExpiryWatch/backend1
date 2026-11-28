@@ -25,30 +25,6 @@ body {
   background: var(--stock-canvas);
 }
 
-.stock-page {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 32px;
-}
-
-.stock-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.stock-page h1 {
-  font-size: 28px;
-  line-height: 36px;
-}
-
-.stock-page h1,
-.stock-panel h2 {
-  margin: 0;
-}
-
-.stock-page button,
 .stock-panel button,
 .stock-delete-dialog button {
   padding: 0 18px;
@@ -61,17 +37,6 @@ body {
   border: 1px solid var(--stock-border);
   border-radius: 12px;
   cursor: pointer;
-}
-
-button.stock-primary {
-  color: var(--stock-white);
-  background: var(--stock-primary);
-  border-color: var(--stock-primary);
-}
-
-button.stock-primary:hover {
-  background: #c55384;
-  border-color: #c55384;
 }
 
 button:disabled {
@@ -89,30 +54,8 @@ button:disabled {
 }
 
 #stock-status:empty {
-  display: none;
-}
-
-#stock-list {
-  display: grid;
-  gap: 12px;
-  padding: 0;
-  list-style: none;
-}
-
-.stock-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px;
-  background: var(--stock-white);
-  border: 1px solid var(--stock-border);
-  border-radius: 12px;
-}
-
-.stock-list-item span {
-  overflow-wrap: anywhere;
+  position: absolute;
+  clip-path: inset(50%);
 }
 
 /* Боковая панель */
@@ -295,7 +238,21 @@ button:disabled {
 
 .stock-field select {
   appearance: none;
+  padding-right: 30px;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--stock-muted) 50%) right 17px center / 5px 5px no-repeat,
+    linear-gradient(135deg, var(--stock-muted) 50%, transparent 50%) right 12px center / 5px 5px no-repeat
+    var(--stock-white);
   cursor: pointer;
+}
+
+.stock-field input[type="date"] {
+  display: block;
+  appearance: none;
+}
+
+.stock-field input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
 }
 
 .stock-field input:focus,
@@ -308,7 +265,7 @@ button:disabled {
 
 .stock-field [aria-invalid="true"] {
   border-color: var(--stock-danger);
-  background: var(--stock-error-bg);
+  background-color: var(--stock-error-bg);
 }
 
 .stock-field [aria-invalid="true"]:focus {
@@ -489,9 +446,13 @@ button:disabled {
 #stock-delete-text {
   margin: 0 0 16px;
   color: var(--stock-muted);
-  font-size: 15px;
+  font-size: 13px;
   line-height: 20px;
   overflow-wrap: anywhere;
+}
+
+#stock-delete-error:not(:empty) {
+  margin-bottom: 16px;
 }
 
 #stock-delete-text strong {
@@ -505,8 +466,8 @@ button:disabled {
 
 .stock-delete-dialog button.stock-danger {
   color: var(--stock-white);
-  background: var(--stock-danger);
-  border-color: var(--stock-danger);
+  background: #a64256;
+  border-color: #a64256;
 }
 
 .stock-delete-dialog button.stock-danger:hover {
@@ -547,14 +508,6 @@ button:disabled {
 /* Телефоны */
 
 @media (max-width: 480px) {
-  .stock-page {
-    padding: 20px;
-  }
-
-  .stock-page > .stock-header {
-    flex-wrap: wrap;
-  }
-
   .stock-panel > .stock-header {
     padding-left: 20px;
     padding-right: 68px;
@@ -574,10 +527,16 @@ button:disabled {
   }
 
   .stock-form > .stock-actions {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     margin-right: -20px;
     margin-left: -20px;
     padding-right: 20px;
     padding-left: 20px;
+  }
+
+  .stock-form > .stock-actions .stock-save {
+    min-width: 0;
   }
 }
 
